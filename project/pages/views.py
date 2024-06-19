@@ -129,26 +129,38 @@ def list_files(request):
                     raise ValueError("Format de fichier non pris en charge")
 
                 # Calculer les statistiques descriptives
+                 # Calculer les statistiques descriptives
                 num_rows, num_cols = df.shape
                 column_names = df.columns.tolist()
                 summary = df.describe().transpose().to_html(classes='table table-striped')
 
-                # Générer un graphique de distribution pour la première colonne numérique
+                # Nettoyer les colonnes non numériques
                 numeric_columns = df.select_dtypes(include='number').columns
+                graphics = []
                 if not numeric_columns.empty:
-                    plt.figure(figsize=(10, 6))
-                    sns.histplot(df[numeric_columns[0]], kde=True)
-                    plt.title(f'Distribution of {numeric_columns[0]}')
-                    plt.xlabel(numeric_columns[0])
-                    plt.ylabel('Frequency')
+                    for column in numeric_columns:
+                        plt.figure(figsize=(12, 8))
+                        sns.histplot(df[column].dropna(), kde=True)
+                        plt.title(f'Distribution of {column}')
+                        plt.xlabel(column)
+                        plt.ylabel('Frequency')
 
-                    # Convertir le graphique en image encodée en base64
-                    buffer = BytesIO()
-                    plt.savefig(buffer, format='png')
-                    buffer.seek(0)
-                    image_png = buffer.getvalue()
-                    buffer.close()
-                    graphic = base64.b64encode(image_png).decode('utf-8')
+                        # Convertir le graphique en image encodée en base64
+                        buffer = BytesIO()
+                        plt.savefig(buffer, format='png')
+                        buffer.seek(0)
+                        image_png = buffer.getvalue()
+                        buffer.close()
+                        graphic = base64.b64encode(image_png).decode('utf-8')
+                        graphics.append(graphic)
+                        plt.close()
+
+                    # Générer une Heatmap de corrélation
+                    heatmap_graphic = generate_heatmap(df[numeric_columns])
+                    
+                    # Generate scatter plots
+                    scatter_plots = generate_scatter_plots(df)                    # Diviser les graphiques en groupes de trois
+                    graphics_grouped = [graphics[i:i + 2] for i in range(0, len(graphics), 2)]
 
                     return render(request, 'pages/dash.html', {
                         'uploaded_files': uploaded_files,
@@ -157,7 +169,9 @@ def list_files(request):
                         'num_cols': num_cols,
                         'column_names': column_names,
                         'summary': summary,
-                        'graphic': graphic
+                        'graphics_grouped': graphics_grouped,
+                        'heatmap_graphic': heatmap_graphic,
+                        'scatter_plots': scatter_plots
                     })
                 else:
                     return render(request, 'pages/dash.html', {
@@ -174,5 +188,55 @@ def list_files(request):
                     'uploaded_files': uploaded_files,
                     'error_message': f"Erreur lors de la lecture du fichier {selected_file}: {str(e)}"
                 })
-
+            
     return render(request, 'pages/dash.html', {'uploaded_files': uploaded_files})
+
+def generate_heatmap(df):
+    plt.figure(figsize=(12, 10))
+    correlation_matrix = df.corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5)
+    plt.title('Correlation Heatmap')
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    heatmap_graphic = base64.b64encode(image_png).decode('utf-8')
+    plt.close()
+
+    return heatmap_graphic
+
+
+
+# generate scatler plot 
+import itertools
+
+def generate_scatter_plots(df):
+    numeric_columns = df.select_dtypes(include='number').columns
+    scatter_plots = []
+
+    # Generate scatter plots for all pairs of numeric columns
+    for x_col, y_col in itertools.combinations(numeric_columns, 2):
+        plt.figure(figsize=(10, 8))
+        sns.scatterplot(x=df[x_col], y=df[y_col])
+        plt.title(f'Scatter Plot: {x_col} vs {y_col}')
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+        
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        image_png = buffer.getvalue()
+        buffer.close()
+        
+        scatter_plot = base64.b64encode(image_png).decode('utf-8')
+        plt.close()
+        
+        scatter_plots.append({
+            'x_col': x_col,
+            'y_col': y_col,
+            'scatter_plot': scatter_plot
+        })
+
+    return scatter_plots

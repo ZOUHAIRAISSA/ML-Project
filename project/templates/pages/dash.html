@@ -159,7 +159,7 @@
 
 
 
-<!-- //table donner -->
+    <!-- //table donner -->
     <div class="card m-5 shadow-lg ">
         <div class="upload-header text-center">
             <h1>Résumé statistique</h1>
@@ -183,36 +183,78 @@
         </div>
     </div>
 
-<!-- // graphe  -->
-    <div class="card m-5 shadow-lg ">
+    <!-- // graphe  -->
+    {% if graphics_grouped %}
+    <div class="card m-5 shadow-lg">
         <div class="upload-header text-center">
             <h1>Graphe statistique</h1>
         </div>
         <div class="stretch-card">
             <div class="card card-rounded">
+                <h3 class="card-title p-3 ">Graphe de Distribution</h3>
                 <div class="card-body card-rounded">
+                    {% for group in graphics_grouped %}
                     <div class="row border-bottom py-2">
+                        {% for graphic in group %}
                         <div class="col-6">
-                            <div class="col-sm">
-                                <p class="mb-2 fw-medium h5">
-                                    {% if graphic %}
-                                    <h3>Graphique de distribution</h3>
-                                    <img src="data:image/png;base64,{{ graphic }}" alt="Distribution Plot">
-                                    {% endif %}
-                                    <!-- ///// -->
-                                    
-                                </p>
-                            </div>
+                            <img src="data:image/png;base64,{{ graphic }}" class="img-fluid" alt="Distribution Graph">
                         </div>
+                        {% endfor %}
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
+
+
+    {% if heatmap_graphic %}
+    <div class="card m-5 shadow-lg heatmap-container">
+        <div class="upload-header text-center">
+            <h1>Correlation Heatmap</h1>
+        </div>
+        <div class="stretch-card">
+            <div class="card card-rounded">
+                <div class="card-body card-rounded">
+                    <img src="data:image/png;base64,{{ heatmap_graphic }}" class="img-fluid graphic"
+                        alt="Correlation Heatmap">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    {% if scatter_plots %}
+    <div class="card m-5 shadow-lg">
+        <div class="upload-header text-center">
+            <h1>Scatter Plots</h1>
+        </div>
+        <div class="stretch-card">
+            <div class="card card-rounded">
+                <div class="card-body card-rounded">
+                    {% for plot in scatter_plots %}
+                    {% if forloop.counter0|divisibleby:3 %}
+                    <div class="row border-bottom py-2">
+                        {% endif %}
+                        <div class="col-md-4">
+                            <h3 class="card-title p-3">Scatter Plot: {{ plot.x_col }} vs {{ plot.y_col }}</h3>
+                            <img src="data:image/png;base64,{{ plot.scatter_plot }}" class="img-fluid"
+                                alt="Scatter Plot">
+                        </div>
+                        {% if forloop.counter0|add:1|divisibleby:3 or forloop.last %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    {% endif %}
 </div>
-
-
-
-
 {% endblock %}
