@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content1 %}
+<!-- <div class="navbar-menu-wrapper d-flex align-items-top">
+    <ul class="navbar-nav">
+        <li class="nav-item fw-semibold d-none d-lg-block ms-0">
+            <h1 class="welcome-text">Tableau <span class="text-black fw-bold"> de bord</span></h1>
+        </li>
+    </ul>
+</div> -->
+{% endblock %}
+
+{% block content2 %}
+<div class="container">
+    <h2>Les données de fichier :<strong>{{ file_name }}</strong> </h2>
+    <br>
+    
+    <div class="col-lg-12 grid-margin stretch-card">
+        <div class="card">
+            <div class="card-body">
+                {% if csv_content %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            {% for header in csv_content.0 %}
+                            <th>{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in csv_content|slice:"1:" %}
+                        <tr>
+                            {% for cell in row %}
+                            <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% elif excel_content %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            {% for header in excel_content.0 %}
+                            <th>{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in excel_content|slice:"1:" %}
+                        <tr>
+                            {% for cell in row %}
+                            <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <br>
+                <div class="alert alert-danger" role="alert">
+                    Format de fichier non pris en charge.
+                </div>
+                {% endif %}
+                <br>
+
+          <a href="{% url 'index' %}" class="btn btn-primary float-end">Retour à la page de téléchargement</a>
+
+            </div>
+            {% endblock %}
+        </div>
+    </div>
+</div>
