@@ -5,7 +5,7 @@ import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from .forms import UploadFileForm
-from .models import UploadedFile
+from .models import Dataset, UploadedFile
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
@@ -240,3 +240,67 @@ def generate_scatter_plots(df):
         })
 
     return scatter_plots
+
+
+def pretraitement_dataset(request):
+    # Récupérer la liste des fichiers dans le répertoire media/uploads
+    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+    uploaded_files = [f for f in os.listdir(upload_dir) if f.endswith(('.csv', '.xls', '.xlsx'))]
+
+    if request.method == 'POST':
+        selected_file = request.POST.get('file_name', '')
+        file_path = os.path.join(upload_dir, selected_file)
+
+        if selected_file and os.path.isfile(file_path):
+            try:
+                # Lire le fichier selon son extension
+                if selected_file.endswith('.csv'):
+                    df = pd.read_csv(file_path)
+                elif selected_file.endswith(('.xlsx', '.xls')):
+                    df = pd.read_excel(file_path, engine='openpyxl')
+                else:
+                    raise ValueError("Format de fichier non pris en charge")
+
+                # Exemple de prétraitement: calcul des statistiques descriptives
+                num_rows, num_cols = df.shape
+                column_names = df.columns.tolist()
+                summary = df.describe().transpose().to_html(classes='table table-striped')
+
+                # Exemple de prétraitement: nettoyage des données
+                # (Ajoutez ici votre logique de nettoyage ou de traitement des données)
+
+                # Exemple de prétraitement: visualisation (histogramme d'une colonne)
+                plt.figure(figsize=(10, 6))
+                sns.histplot(df['Age'], kde=True)
+                plt.title('Distribution des âges')
+                plt.xlabel('Âge')
+                plt.ylabel('Fréquence')
+
+                # Convertir le graphique en image encodée en base64
+                buffer = BytesIO()
+                plt.savefig(buffer, format='png')
+                buffer.seek(0)
+                image_png = buffer.getvalue()
+                buffer.close()
+                graphic = base64.b64encode(image_png).decode('utf-8')
+                plt.close()
+
+                return render(request, 'pages/pretraitement.html', {
+                    'uploaded_files': uploaded_files,
+                    'selected_file': selected_file,
+                    'num_rows': num_rows,
+                    'num_cols': num_cols,
+                    'column_names': column_names,
+                    'summary': summary,
+                    'graphic': graphic  # Passer le graphique encodé en base64 au template
+                })
+
+            except Exception as e:
+                error_message = f"Erreur lors de la lecture du fichier {selected_file}: {str(e)}"
+                return render(request, 'pages/pretraitement.html', {
+                    'uploaded_files': uploaded_files,
+                    'error_message': error_message
+                })
+
+    # Si la méthode n'est pas POST ou si aucun fichier sélectionné, retourner à la page avec la liste des fichiers
+    return render(request, 'pages/pretraitement.html', {'uploaded_files': uploaded_files})

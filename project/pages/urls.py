@@ -7,6 +7,7 @@ urlpatterns = [
     path('delete-file/<int:file_id>/', views.delete_file, name='delete_file'),
     path('dash/', views.list_files, name='dash'),
     path('dash/', views.dash, name='dash'),
+    path('pretraitement/', views.pretraitement_dataset, name='pretraitement'),
     path('pretraitement/', views.pretraitement, name='pretraitement'),
     path('algo/', views.algo, name='algo'),
     path('perforamnces/', views.perforamnces, name='perforamnces'),

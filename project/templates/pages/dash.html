@@ -5,9 +5,6 @@
 
 {% block stylesheet %}
 <style>
-    body {
-        background-color: #f8f9fa;
-    }
 
     .upload-container {
 
@@ -15,6 +12,7 @@
         border-radius: 10px;
         padding: 30px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-right: 500;
     }
 
     .upload-header {
@@ -84,10 +82,11 @@
 
 {% block content2 %}
 
-<div class="container mt-4">
-    <div class="card m-5 mt-3 shadow-lg ">
-        <div class="upload-header text-center">
-            <h1>Choisir un fichier à télécharger</h1>
+<div class="body-container-wrapper w-50 mx-auto ">
+    <div class="body-container">
+        <div class="upload-container">
+            <div class="upload-header text-center">
+            <h1>Choisir un fichier</h1>
         </div>
         <div class="stretch-card">
             <div class="card card-rounded">
@@ -109,7 +108,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <button type="submit" class="btn text-white text-center float-end"
-                                            style="background-color: #1d00f9;">Afficher les données</button>
+                                            style="background-color: #1d00f9;">Afficher les statistiques</button>
                                     </div>
                                 </form>
                                 </p>
