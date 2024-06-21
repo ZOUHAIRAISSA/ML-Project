@@ -277,6 +277,17 @@ def generate_scatter_plots(df):
 
     return scatter_plots
 
+import os
+import dask.dataframe as dd
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from django.shortcuts import render
+from django.conf import settings
+import numpy as np
+
 def pretraitement_dataset(request):
     upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
     uploaded_files = [f for f in os.listdir(upload_dir) if f.endswith(('.csv', '.xls', '.xlsx'))]
@@ -287,46 +298,60 @@ def pretraitement_dataset(request):
 
         if selected_file and os.path.isfile(file_path):
             try:
-                # Lecture du fichier en fonction de son extension
+                # Limiter la taille du fichier à 100 Mo
+                if os.path.getsize(file_path) > 100 * 1024 * 1024:
+                    raise ValueError("Le fichier est trop volumineux pour être traité")
+
+                # Lecture du fichier par morceaux (chunks) avec Dask
                 if selected_file.endswith('.csv'):
-                    df = pd.read_csv(file_path)
+                    df = dd.read_csv(file_path)
                 elif selected_file.endswith(('.xlsx', '.xls')):
-                    df = pd.read_excel(file_path, engine='openpyxl')
+                    df = dd.read_excel(file_path, engine='openpyxl')
                 else:
                     raise ValueError("Format de fichier non pris en charge")
 
                 # Supprimer les doublons
-                df.drop_duplicates(inplace=True)
+                df = df.drop_duplicates()
 
                 # Nettoyage des données
-                # Remplacer les valeurs non numériques par NaN pour la conversion
-                df.replace(['NAN', 'nan', 'Nan', 'nAn'], pd.NA, inplace=True)
+                df = df.replace(['NAN', 'nan', 'Nan', 'nAn'], np.nan)
                 
                 # Conversion en valeurs numériques si possible
-                df = df.apply(pd.to_numeric, errors='ignore')
+                df = df.map_partitions(lambda pdf: pdf.apply(pd.to_numeric, errors='ignore'), meta=df)
 
                 # Gestion des données manquantes avec imputation
-                for col in df.columns:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        imputer = SimpleImputer(strategy='mean')
-                        df[col] = imputer.fit_transform(df[[col]]).ravel()
+                numeric_cols = df.select_dtypes(include=[np.number]).columns
+                for col in numeric_cols:
+                    imputer = SimpleImputer(strategy='mean')
+                    df[col] = df[col].map_partitions(lambda s: imputer.fit_transform(s.values.reshape(-1, 1)).ravel(), meta=df[col])
 
-                # Encodage des variables catégorielles (One-Hot Encoding)
+                # Encodage des variables catégorielles (One-Hot Encoding) par morceaux
                 categorical_columns = df.select_dtypes(include=['object']).columns
-                if not categorical_columns.empty:
-                    encoder = OneHotEncoder(handle_unknown='ignore')
-                    encoded_cols = encoder.fit_transform(df[categorical_columns])
-                    encoded_df = pd.DataFrame(encoded_cols.toarray(), columns=encoder.get_feature_names_out(categorical_columns))
-                    df = pd.concat([df.drop(columns=categorical_columns), encoded_df], axis=1)
+                if len(categorical_columns) > 0:
+                    df = df.categorize(columns=categorical_columns)
+                    for col in categorical_columns:
+                        unique_values = df[col].nunique().compute()
+                        if unique_values > 100:
+                            # Utiliser un encodage de fréquence pour les colonnes avec trop de catégories
+                            freq_encoding = df[col].value_counts(normalize=True).to_frame().compute()
+                            freq_encoding.columns = [f'{col}_freq']
+                            df = df.merge(freq_encoding, left_on=col, right_index=True, how='left')
+                            df = df.drop(columns=[col])
+                        else:
+                            df = dd.concat([df, dd.get_dummies(df[col], prefix=col)], axis=1)
+                            df = df.drop(columns=[col])
 
                 # Encodage TF-IDF pour les colonnes textuelles si nécessaire
                 text_columns = df.select_dtypes(include=['object']).columns
-                if not text_columns.empty:
+                if len(text_columns) > 0:
                     for col in text_columns:
                         tfidf = TfidfVectorizer(max_features=1000)
-                        tfidf_result = tfidf.fit_transform(df[col].values.astype('U'))
+                        tfidf_result = tfidf.fit_transform(df[col].compute().astype(str))
                         tfidf_df = pd.DataFrame(tfidf_result.toarray(), columns=tfidf.get_feature_names_out())
-                        df = pd.concat([df.drop(columns=[col]), tfidf_df], axis=1)
+                        df = dd.concat([df.drop(columns=[col]), dd.from_pandas(tfidf_df, npartitions=df.npartitions)], axis=1)
+
+                # Conversion en DataFrame Pandas pour la séparation des données
+                df = df.compute()
 
                 # Séparation des données en ensembles d'entraînement et de test
                 X = df.drop(columns=df.columns[-1])  # Exclure la dernière colonne comme colonne cible
@@ -342,6 +367,7 @@ def pretraitement_dataset(request):
 
                 # Sauvegarde du fichier nettoyé et transformé si nécessaire
                 save_dir = os.path.join(settings.MEDIA_ROOT, 'Enregistrement')
+                os.makedirs(save_dir, exist_ok=True)
                 save_file_path = os.path.join(save_dir, selected_file)
                 if selected_file.endswith('.csv'):
                     df.to_csv(save_file_path, index=False)
@@ -356,7 +382,6 @@ def pretraitement_dataset(request):
                 processed_data_info = {
                     'X_train_shape': X_train_shape,
                     'X_test_shape': X_test_shape,
-                    # Ajoutez d'autres informations au besoin
                 }
 
                 return render(request, 'pages/pretraitement.html', {
