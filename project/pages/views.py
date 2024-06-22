@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from .forms import UploadFileForm
 from .models import Dataset, UploadedFile
+from django.http import JsonResponse
 
 # Modules pour le traitement des données et le machine learning
 import pandas as pd
@@ -43,15 +44,134 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.feature_extraction.text import TfidfVectorizer
+import os
+import dask.dataframe as dd
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from django.shortcuts import render
+from django.conf import settings
+import numpy as np
+import itertools
+
+
+
+def list_files_eregistrement():
+    # Chemin du répertoire d'enregistrement
+    save_dir = os.path.join(settings.MEDIA_ROOT, 'Enregistrement')
+    # Vérifier si le répertoire existe
+    if not os.path.exists(save_dir):
+        uploaded_files = []
+    else:
+        # Récupérer la liste des fichiers dans le répertoire
+        uploaded_files = [f for f in os.listdir(save_dir) if f.endswith(('.csv', '.xls', '.xlsx'))]
+
+    return uploaded_files
 
 def pretraitement(request):
     return render(request, 'pages/pretraitement.html')
 
 def dash(request):
-    return render(request, 'pages/dash.html')
 
+    
+    return render(request, 'pages/dash.html' )
+
+def get_column_type(series):
+    if pd.api.types.is_datetime64_any_dtype(series):
+        return 'Date'
+    elif pd.api.types.is_string_dtype(series):
+        return 'Chaîne de caractères'
+    elif pd.api.types.is_float_dtype(series):
+        return 'Float'
+    elif pd.api.types.is_bool_dtype(series):
+        return 'Boolean'
+    else:
+        return 'Autre'
+
+def get_column_details(request):
+    file_name = request.GET.get('file_name', None)
+    if not file_name:
+        return JsonResponse({'error': 'File name parameter is missing'}, status=400)
+
+    # Chemin complet du fichier sélectionné
+    file_path = os.path.join(settings.MEDIA_ROOT, 'Enregistrement', file_name)
+
+    try:
+        # Lire le fichier CSV ou Excel
+        if file_name.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        elif file_name.endswith(('.xls', '.xlsx')):
+            df = pd.read_excel(file_path)
+        else:
+            return JsonResponse({'error': 'Unsupported file format'}, status=400)
+
+        # Récupérer les noms des colonnes et leurs premières valeurs
+        columns_info = []
+        for col in df.columns:
+            example_value = df[col].iloc[0] if len(df[col]) > 0 else ''
+            column_info = {
+                'name': col,
+                'example_value': str(example_value),  # Convertir en chaîne au cas où
+                'type': get_column_type(df[col])
+            }
+            columns_info.append(column_info)
+
+        return JsonResponse(columns_info, safe=False)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+
+def train_model(request):
+    if request.method == 'POST':
+       # Récupérer les données soumises depuis le formulaire
+        file_name = request.POST.get('file_name', '')
+        selected_column = request.POST.get('selected_column', '')
+        
+        print (file_name)
+        print (selected_column)
+        # Exemple de traitement simplifié
+        # Ici, vous pouvez faire le traitement spécifique pour la classification ou la régression
+        # C'est ici que vous entraîneriez votre modèle en fonction des données soumises
+
+        # Exemple de réponse pour illustration
+        context = {
+            'file_name': file_name,
+            'selected_column': selected_column,
+            'message': 'Modèle entraîné avec succès.'
+        }
+        return JsonResponse(context)  # Réponse JSON si nécessaire
+
+    # return render(request, 'your_template.html')  # Redirigez ou affichez quelque chose après traitement    
 def algo(request):
-    return render(request, 'pages/algo.html')
+    context = {}
+    if request.method == 'POST':
+       # Récupérer les données soumises depuis le formulaire
+        file_name = request.POST.get('file_name', '')
+        target = request.POST.getlist('target')  # Liste des colonnes cibles sélectionnées
+        features = request.POST.getlist('features') 
+        
+        # Exemple de traitement simplifié
+        # Ici, vous pouvez faire le traitement spécifique pour la classification ou la régression
+        # C'est ici que vous entraîneriez votre modèle en fonction des données soumises
+
+        # Exemple de réponse pour illustration
+        context = {
+            'file_name': file_name,
+            'selected_column': target,
+            'features':features,
+            'message': 'Modèle entraîné avec succès.'
+        }
+        return JsonResponse(context)  # Réponse JSON si nécessaire
+
+    list_file_enregistrement= list_files_eregistrement()
+    return render(request, 'pages/algo.html',{
+        'list_file_enregistrement': list_file_enregistrement,
+        'context':context,
+                                              
+     })
 
 def parametres(request):
     return render(request, 'pages/parametres.html')
@@ -134,8 +254,7 @@ def read_excel(file_path):
 
 
 
-
-
+ 
 def list_files(request):
     # Récupérer la liste des fichiers dans le répertoire media/uploads
     upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
@@ -246,7 +365,7 @@ def generate_heatmap(df):
 
 
 # generate scatler plot 
-import itertools
+
 
 def generate_scatter_plots(df):
     numeric_columns = df.select_dtypes(include='number').columns
@@ -277,16 +396,6 @@ def generate_scatter_plots(df):
 
     return scatter_plots
 
-import os
-import dask.dataframe as dd
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from django.shortcuts import render
-from django.conf import settings
-import numpy as np
 
 def pretraitement_dataset(request):
     upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
@@ -396,3 +505,7 @@ def pretraitement_dataset(request):
                 })
 
     return render(request, 'pages/pretraitement.html', {'uploaded_files': uploaded_files})
+
+
+
+

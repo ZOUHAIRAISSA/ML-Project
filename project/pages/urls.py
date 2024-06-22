@@ -12,4 +12,5 @@ urlpatterns = [
     path('algo/', views.algo, name='algo'),
     path('perforamnces/', views.perforamnces, name='perforamnces'),
     path('parametres/', views.parametres, name='parametres'),
+    path('get_column_details/', views.get_column_details, name='get_column_details')
 ]
