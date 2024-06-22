@@ -5,7 +5,6 @@
 
 {% block stylesheet %}
 <style>
-
     .upload-container {
 
         background-color: #fff;
@@ -86,173 +85,177 @@
     <div class="body-container">
         <div class="upload-container">
             <div class="upload-header text-center">
-            <h1>Choisir un fichier</h1>
-        </div>
-        <div class="stretch-card">
-            <div class="card card-rounded">
-                <div class="card-body card-rounded">
-                    <div class="row border-bottom py-2">
-                        <div class="col-12">
-                            <div class="col-sm">
-                                <p class="mb-2 fw-medium h5">
-                                <form method="post">
-                                    {% csrf_token %}
-                                    <div class="mb-3">
-                                        <label for="file_select" class="form-label">Sélectionner un fichier :</label>
-                                        <select class="form-select" id="file_select" name="file_name">
-                                            <option value="">Choisir un fichier</option>
-                                            {% for file_name in uploaded_files %}
-                                            <option value="{{ file_name }}">{{ file_name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <button type="submit" class="btn text-white text-center float-end"
-                                            style="background-color: #1d00f9;">Afficher les statistiques</button>
-                                    </div>
-                                </form>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h1>Choisir un fichier</h1>
             </div>
-        </div>
-    </div>
-    {% if error_message %}
-    <div class="alert alert-danger" role="alert">
-        {{ error_message }}
-    </div>
-    {% endif %}
-
-    {% if selected_file %}
-    <hr>
-
-
-    <div class="tab-content tab-content-basic">
-        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="statistics-details d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="statistics-title">Nombre de lignes </p>
-                            <h3 class="rate-percentage">{{ num_rows }}</h3>
-                            <p class="text-danger d-flex"><i class="mdi mdi-menu-down"></i><span>-0.5%</span></p>
-                        </div>
-                        <div>
-                            <p class="statistics-title">Nombre de colonnes</p>
-                            <h3 class="rate-percentage"> {{ num_cols }}</h3>
-                            <p class="text-success d-flex"><i class="mdi mdi-menu-up"></i><span>+0.1%</span></p>
-                        </div>
-                        <div>
-                            <p class="statistics-title">Noms des colonnes</p>
-                            <h3 class="rate-percentage">{{ column_names }} </h3>
-                            <p class="text-danger d-flex"><i class="mdi mdi-menu-down"></i><span>68.8</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- //table donner -->
-    <div class="card m-5 shadow-lg ">
-        <div class="upload-header text-center">
-            <h1>Résumé statistique</h1>
-        </div>
-        <div class="stretch-card">
-            <div class="card card-rounded">
-                <div class="card-body card-rounded">
-                    <div class="row border-bottom py-2">
-                        <div class="col-12">
-                            <div class="col-sm">
-                                <p class="mb-2 fw-medium h5">
-                                <div>
-                                    {{ summary|safe }}
+            <div class="stretch-card">
+                <div class="card card-rounded">
+                    <div class="card-body card-rounded">
+                        <div class="row border-bottom py-2">
+                            <div class="col-12">
+                                <div class="col-sm">
+                                    <p class="mb-2 fw-medium h5">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="file_select" class="form-label">Sélectionner un fichier
+                                                :</label>
+                                            <select class="form-select" id="file_select" name="file_name">
+                                                <option value="">Choisir un fichier</option>
+                                                {% for file_name in uploaded_files %}
+                                                <option value="{{ file_name }}">{{ file_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <button type="submit" class="btn text-white text-center float-end" 
+                                                style="background-color: #1d00f9;">Afficher les statistiques</button>
+                                        </div>
+                                    </form>
+                                    </p>
                                 </div>
-                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- // graphe  -->
-    {% if graphics_grouped %}
-    <div class="card m-5 shadow-lg">
-        <div class="upload-header text-center">
-            <h1>Graphe statistique</h1>
+        {% if error_message %}
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
         </div>
-        <div class="stretch-card">
-            <div class="card card-rounded">
-                <h3 class="card-title p-3 ">Graphe de Distribution</h3>
-                <div class="card-body card-rounded">
-                    {% for group in graphics_grouped %}
-                    <div class="row border-bottom py-2">
-                        {% for graphic in group %}
-                        <div class="col-6">
-                            <img src="data:image/png;base64,{{ graphic }}" class="img-fluid" alt="Distribution Graph">
+        {% endif %}
+
+        {% if selected_file %}
+        <hr>
+
+
+        <div class="tab-content tab-content-basic">
+            <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="statistics-details d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="statistics-title">Nombre de lignes </p>
+                                <h3 class="rate-percentage">{{ num_rows }}</h3>
+                                <p class="text-danger d-flex"><i class="mdi mdi-menu-down"></i><span>-0.5%</span></p>
+                            </div>
+                            <div>
+                                <p class="statistics-title">Nombre de colonnes</p>
+                                <h3 class="rate-percentage"> {{ num_cols }}</h3>
+                                <p class="text-success d-flex"><i class="mdi mdi-menu-up"></i><span>+0.1%</span></p>
+                            </div>
+                            <div>
+                                <p class="statistics-title">Noms des colonnes</p>
+                                <h3 class="rate-percentage">{{ column_names }} </h3>
+                                <p class="text-danger d-flex"><i class="mdi mdi-menu-down"></i><span>68.8</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- //table donner -->
+        <div class="card m-5 shadow-lg ">
+            <div class="upload-header text-center">
+                <h1>Résumé statistique</h1>
+            </div>
+            <div class="stretch-card">
+                <div class="card card-rounded">
+                    <div class="card-body card-rounded">
+                        <div class="row border-bottom py-2">
+                            <div class="col-12">
+                                <div class="col-sm">
+                                    <p class="mb-2 fw-medium h5">
+                                    <div>
+                                        {{ summary|safe }}
+                                    </div>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- // graphe  -->
+        {% if graphics_grouped %}
+        <div class="card m-5 shadow-lg">
+            <div class="upload-header text-center">
+                <h1>Graphe statistique</h1>
+            </div>
+            <div class="stretch-card">
+                <div class="card card-rounded">
+                    <h3 class="card-title p-3 ">Graphe de Distribution</h3>
+                    <div class="card-body card-rounded">
+                        {% for group in graphics_grouped %}
+                        <div class="row border-bottom py-2">
+                            {% for graphic in group %}
+                            <div class="col-6">
+                                <img src="data:image/png;base64,{{ graphic }}" class="img-fluid"
+                                    alt="Distribution Graph">
+                            </div>
+                            {% endfor %}
                         </div>
                         {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
 
-    {% if heatmap_graphic %}
-    <div class="card m-5 shadow-lg heatmap-container">
-        <div class="upload-header text-center">
-            <h1>Correlation Heatmap</h1>
-        </div>
-        <div class="stretch-card">
-            <div class="card card-rounded">
-                <div class="card-body card-rounded">
-                    <img src="data:image/png;base64,{{ heatmap_graphic }}" class="img-fluid graphic"
-                        alt="Correlation Heatmap">
-                </div>
+        {% if heatmap_graphic %}
+        <div class="card m-5 shadow-lg heatmap-container">
+            <div class="upload-header text-center">
+                <h1>Correlation Heatmap</h1>
             </div>
-        </div>
-    </div>
-    {% endif %}
-
-
-    {% if scatter_plots %}
-    <div class="card m-5 shadow-lg">
-        <div class="upload-header text-center">
-            <h1>Scatter Plots</h1>
-        </div>
-        <div class="stretch-card">
-            <div class="card card-rounded">
-                <div class="card-body card-rounded">
-                    {% for plot in scatter_plots %}
-                    {% if forloop.counter0|divisibleby:3 %}
-                    <div class="row border-bottom py-2">
-                        {% endif %}
-                        <div class="col-md-4">
-                            <h3 class="card-title p-3">Scatter Plot: {{ plot.x_col }} vs {{ plot.y_col }}</h3>
-                            <img src="data:image/png;base64,{{ plot.scatter_plot }}" class="img-fluid"
-                                alt="Scatter Plot">
-                        </div>
-                        {% if forloop.counter0|add:1|divisibleby:3 or forloop.last %}
+            <div class="stretch-card">
+                <div class="card card-rounded">
+                    <div class="card-body card-rounded">
+                        <img src="data:image/png;base64,{{ heatmap_graphic }}" class="img-fluid graphic"
+                            alt="Correlation Heatmap">
                     </div>
-                    {% endif %}
-                    {% endfor %}
                 </div>
             </div>
         </div>
+        {% endif %}
+
+
+        {% if scatter_plots %}
+        <div class="card m-5 shadow-lg">
+            <div class="upload-header text-center">
+                <h1>Scatter Plots</h1>
+            </div>
+            <div class="stretch-card">
+                <div class="card card-rounded">
+                    <div class="card-body card-rounded">
+                        {% for plot in scatter_plots %}
+                        {% if forloop.counter0|divisibleby:3 %}
+                        <div class="row border-bottom py-2">
+                            {% endif %}
+                            <div class="col-md-4">
+                                <h3 class="card-title p-3">Scatter Plot: {{ plot.x_col }} vs {{ plot.y_col }}</h3>
+                                <img src="data:image/png;base64,{{ plot.scatter_plot }}" class="img-fluid"
+                                    alt="Scatter Plot">
+                            </div>
+                            {% if forloop.counter0|add:1|divisibleby:3 or forloop.last %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+
+
+        {% endif %}
     </div>
-    {% endif %}
 
-
-
-    {% endif %}
 </div>
 {% endblock %}
